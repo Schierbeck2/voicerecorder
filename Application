@@ -58,36 +58,6 @@
             box-sizing: border-box;
         }
         
-        .folder-selector {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-        
-        .folder-button {
-            background: #4285f4;
-            color: white;
-            padding: 10px 15px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 14px;
-            white-space: nowrap;
-        }
-        
-        .folder-button:hover {
-            background: #3367d6;
-        }
-        
-        .folder-display {
-            background: rgba(255, 255, 255, 0.2);
-            padding: 8px 12px;
-            border-radius: 5px;
-            font-size: 14px;
-            flex: 1;
-            word-break: break-all;
-        }
-        
         .controls {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -203,16 +173,6 @@
             font-family: monospace;
             font-weight: bold;
         }
-        
-        .info-note {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 5px;
-            padding: 10px;
-            margin-top: 10px;
-            font-size: 12px;
-            text-align: center;
-            opacity: 0.8;
-        }
     </style>
 </head>
 <body>
@@ -223,17 +183,6 @@
             <div class="input-group">
                 <label for="filePrefix">File Name Prefix:</label>
                 <input type="text" id="filePrefix" value="File" placeholder="e.g., Talk, Recording, Line">
-            </div>
-            
-            <div class="input-group">
-                <label>Save Location:</label>
-                <div class="folder-selector">
-                    <button class="folder-button" onclick="selectSaveFolder()">Choose Folder</button>
-                    <div class="folder-display" id="folderDisplay">Downloads folder (default)</div>
-                </div>
-                <div class="info-note">
-                    Note: Due to browser security, files will download to your default Downloads folder. You can move them to your chosen folder after download.
-                </div>
             </div>
         </div>
         
@@ -292,7 +241,6 @@
         let startTime;
         let timerInterval;
         let fileCounter = 1;
-        let selectedFolder = null;
 
         // Initialize the app
         window.onload = function() {
@@ -303,12 +251,8 @@
 
         function setupKeyboardShortcuts() {
             document.addEventListener('keydown', function(event) {
-                // Only trigger if not typing in an input field
-                if (event.target.tagName === 'INPUT') {
-                    return;
-                }
+                if (event.target.tagName === 'INPUT') return;
                 
-                // Prevent default behavior for our shortcuts
                 const key = event.key.toLowerCase();
                 
                 switch(key) {
@@ -338,64 +282,6 @@
                         break;
                 }
             });
-            
-            // Visual feedback for key presses
-            document.addEventListener('keydown', function(event) {
-                if (event.target.tagName === 'INPUT') return;
-                
-                const key = event.key.toLowerCase();
-                let button = null;
-                
-                switch(key) {
-                    case 'a': button = document.getElementById('recordBtn'); break;
-                    case 's': button = document.getElementById('stopBtn'); break;
-                    case 'd': button = document.getElementById('saveBtn'); break;
-                    case 'f': button = document.getElementById('deleteBtn'); break;
-                }
-                
-                if (button && !button.disabled) {
-                    button.style.transform = 'translateY(0px)';
-                    button.style.boxShadow = '0 2px 8px rgba(0,0,0,0.3)';
-                }
-            });
-            
-            document.addEventListener('keyup', function(event) {
-                if (event.target.tagName === 'INPUT') return;
-                
-                const key = event.key.toLowerCase();
-                let button = null;
-                
-                switch(key) {
-                    case 'a': button = document.getElementById('recordBtn'); break;
-                    case 's': button = document.getElementById('stopBtn'); break;
-                    case 'd': button = document.getElementById('saveBtn'); break;
-                    case 'f': button = document.getElementById('deleteBtn'); break;
-                }
-                
-                if (button) {
-                    button.style.transform = '';
-                    button.style.boxShadow = '';
-                }
-            });
-        }
-
-        async function selectSaveFolder() {
-            try {
-                // Check if the File System Access API is supported
-                if ('showDirectoryPicker' in window) {
-                    const directoryHandle = await window.showDirectoryPicker();
-                    selectedFolder = directoryHandle;
-                    document.getElementById('folderDisplay').textContent = directoryHandle.name;
-                    updateStatus('Folder selected: ' + directoryHandle.name);
-                } else {
-                    alert('Folder selection not supported in this browser. Files will download to your Downloads folder.');
-                }
-            } catch (error) {
-                if (error.name !== 'AbortError') {
-                    console.error('Error selecting folder:', error);
-                    updateStatus('Folder selection cancelled');
-                }
-            }
         }
 
         function updateFileName() {
@@ -433,12 +319,10 @@
                 mediaRecorder.onstop = () => {
                     recordingBlob = new Blob(audioChunks, { type: 'audio/wav' });
                     
-                    // Create audio preview
                     const audioPreview = document.getElementById('audioPreview');
                     audioPreview.src = URL.createObjectURL(recordingBlob);
                     audioPreview.classList.remove('hidden');
                     
-                    // Enable save and delete buttons
                     document.getElementById('saveBtn').disabled = false;
                     document.getElementById('deleteBtn').disabled = false;
                     
@@ -449,14 +333,11 @@
                 isRecording = true;
                 startTime = Date.now();
                 
-                // Update UI
                 document.getElementById('recordBtn').disabled = true;
                 document.getElementById('recordBtn').classList.add('recording');
                 document.getElementById('stopBtn').disabled = false;
                 
                 updateStatus('Recording in progress...');
-                
-                // Start timer
                 timerInterval = setInterval(updateTimer, 1000);
                 
             } catch (error) {
@@ -470,20 +351,17 @@
                 mediaRecorder.stop();
                 isRecording = false;
                 
-                // Stop all tracks
                 mediaRecorder.stream.getTracks().forEach(track => track.stop());
                 
-                // Update UI
                 document.getElementById('recordBtn').disabled = false;
                 document.getElementById('recordBtn').classList.remove('recording');
                 document.getElementById('stopBtn').disabled = true;
                 
-                // Stop timer
                 clearInterval(timerInterval);
             }
         }
 
-        async function saveRecording() {
+        function saveRecording() {
             if (!recordingBlob) {
                 alert('No recording to save');
                 return;
@@ -492,26 +370,9 @@
             const prefix = document.getElementById('filePrefix').value || 'File';
             const fileName = `${prefix} ${fileCounter}.wav`;
             
-            try {
-                if (selectedFolder && 'showDirectoryPicker' in window) {
-                    // Save to selected folder using File System Access API
-                    const fileHandle = await selectedFolder.getFileHandle(fileName, { create: true });
-                    const writable = await fileHandle.createWritable();
-                    await writable.write(recordingBlob);
-                    await writable.close();
-                    updateStatus(`Saved to folder: ${fileName}`);
-                } else {
-                    // Fallback to download
-                    downloadFile(recordingBlob, fileName);
-                    updateStatus(`Downloaded: ${fileName}`);
-                }
-            } catch (error) {
-                console.error('Save failed, downloading instead:', error);
-                downloadFile(recordingBlob, fileName);
-                updateStatus(`Downloaded: ${fileName}`);
-            }
+            downloadFile(recordingBlob, fileName);
+            updateStatus(`Downloaded: ${fileName}`);
             
-            // Increment counter and reset
             fileCounter++;
             updateFileName();
             resetRecording();
@@ -531,32 +392,24 @@
         function deleteRecording() {
             if (recordingBlob) {
                 recordingBlob = null;
-                
-                // Reset UI
                 resetRecording();
                 updateStatus('Recording deleted - Ready for new recording');
             }
         }
 
         function resetRecording() {
-            // Hide audio preview
             const audioPreview = document.getElementById('audioPreview');
             audioPreview.classList.add('hidden');
             audioPreview.src = '';
             
-            // Disable save and delete buttons
             document.getElementById('saveBtn').disabled = true;
             document.getElementById('deleteBtn').disabled = true;
-            
-            // Reset timer
             document.getElementById('timer').textContent = '00:00';
             
-            // Clear recording data
             audioChunks = [];
             recordingBlob = null;
         }
 
-        // Update filename when prefix changes
         document.getElementById('filePrefix').addEventListener('input', updateFileName);
     </script>
 </body>
