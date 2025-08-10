@@ -24,7 +24,7 @@ A simple web-based voice recording application with Google Drive integration.
 - **G** - Connect/Disconnect Google Drive
 
 ## Live Demo
-[Try it here](https://yourusername.github.io/your-repo-name)
+[Try it here](https://Schierbeck2.github.io/voicerecorder)
 
 ## Setup
 Works immediately for local recording. For Google Drive integration, see the Google Cloud Console setup instructions.
